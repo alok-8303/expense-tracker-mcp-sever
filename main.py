@@ -3,6 +3,7 @@ import asyncpg
 import os
 from typing import Optional
 from dotenv import load_dotenv
+import datetime 
 # ------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------
@@ -97,6 +98,18 @@ async def add_expense(
                 }
             subcategory_id = sub["id"]
 
+        try:
+            date = datetime.strptime(date, "%d-%m-%Y").date()
+
+        except ValueError:
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+
+            except ValueError:
+                return {"error": "Invalid date format. Please use DD-MM-YYYY or YYYY-MM-DD."}
+
+
+
         # Insert expense
         expense_id = await conn.fetchval(
             """
@@ -127,6 +140,15 @@ async def list_expenses(start_date: str, end_date: str):
     """
     List expenses within an inclusive date range.
     """
+    try:
+        start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
+        end_date = datetime.strptime(end_date, "%d-%m-%Y").date()
+    except ValueError:
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+         return {"error": "Invalid date format. Please use DD-MM-YYYY."}
 
     conn = await get_conn()
     try:
@@ -168,6 +190,15 @@ async def summarize(
     """
     Summarize expenses by category / subcategory.
     """
+    try:
+        start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
+        end_date = datetime.strptime(end_date, "%d-%m-%Y").date()
+    except ValueError:
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+         return {"error": "Invalid date format. Please use DD-MM-YYYY."}
 
     conn = await get_conn()
     try:
