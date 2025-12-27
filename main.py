@@ -3,7 +3,7 @@ import asyncpg
 import os
 from typing import Optional
 from dotenv import load_dotenv
-import datetime 
+from datetime import datetime 
 # ------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------
