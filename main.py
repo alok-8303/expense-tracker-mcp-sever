@@ -5,6 +5,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from datetime import datetime
 from pathlib import Path
+from jose import jwt
 
 # ------------------------------------------------------------------
 # Configuration
@@ -23,10 +24,27 @@ mcp = FastMCP("ExpenseTracker")
 # Auth helper
 # ------------------------------------------------------------------
 
-def require_user(ctx: Context):
-    if not ctx.user:
+SUPABASE_JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
+SUPABASE_JWT_ALG = "HS256"
+
+def require_user(ctx: Context) -> str:
+    auth = ctx.request.headers.get("authorization")
+    if not auth or not auth.startswith("Bearer "):
         raise RuntimeError("Authentication required")
-    return ctx.user.id
+
+    token = auth.split(" ", 1)[1]
+
+    try:
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=[SUPABASE_JWT_ALG],
+            audience="authenticated"
+        )
+    except Exception:
+        raise RuntimeError("Invalid or expired token")
+
+    return payload["sub"]  # Supabase user_id (UUID)
 
 
 # ------------------------------------------------------------------

@@ -8,5 +8,6 @@ dependencies = [
     "asyncpg>=0.31.0",
     "fastmcp>=2.14.1",
     "psycopg2-binary>=2.9.11",
+    "python-jose>=3.5.0",
     "starlette>=0.50.0",
 ]
