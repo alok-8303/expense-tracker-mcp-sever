@@ -6,6 +6,22 @@ from dotenv import load_dotenv
 from datetime import datetime
 from pathlib import Path
 from jose import jwt
+from fastmcp.server.dependencies import get_access_token
+from fastmcp import Context
+
+def require_user(ctx: Context) -> str:
+    token = get_access_token()
+
+    if token is None:
+        raise RuntimeError("Authentication required")
+
+    # Supabase user id is in standard JWT 'sub' claim
+    user_id = token.claims.get("sub")
+
+    if not user_id:
+        raise RuntimeError("Invalid access token (no user id)")
+
+    return user_id
 
 # ------------------------------------------------------------------
 # Configuration
@@ -28,24 +44,6 @@ SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
 SUPABASE_JWT_ALG = "HS256"
 # print(bool(SUPABASE_JWT_SECRET))
 
-def require_user(ctx: Context) -> str:
-    auth = ctx.headers.get("authorization")
-    if not auth or not auth.lower().startswith("bearer "):
-        raise RuntimeError("Authentication required")
-
-    token = auth.split(" ", 1)[1]
-
-    try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=[SUPABASE_JWT_ALG],
-            audience="authenticated"
-        )
-    except Exception:
-        raise RuntimeError("Invalid or expired token")
-
-    return payload["sub"]  # Supabase user_id (UUID)
 
 # ------------------------------------------------------------------
 # Database helpers
