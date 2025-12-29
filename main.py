@@ -27,9 +27,10 @@ mcp = FastMCP("ExpenseTracker")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
 SUPABASE_JWT_ALG = "HS256"
 # print(bool(SUPABASE_JWT_SECRET))
+
 def require_user(ctx: Context) -> str:
-    auth = ctx.request.headers.get("authorization")
-    if not auth or not auth.startswith("Bearer "):
+    auth = ctx.headers.get("authorization")
+    if not auth or not auth.lower().startswith("bearer "):
         raise RuntimeError("Authentication required")
 
     token = auth.split(" ", 1)[1]
@@ -45,7 +46,6 @@ def require_user(ctx: Context) -> str:
         raise RuntimeError("Invalid or expired token")
 
     return payload["sub"]  # Supabase user_id (UUID)
-
 
 # ------------------------------------------------------------------
 # Database helpers
