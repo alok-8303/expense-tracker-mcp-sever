@@ -24,9 +24,9 @@ mcp = FastMCP("ExpenseTracker")
 # Auth helper
 # ------------------------------------------------------------------
 
-SUPABASE_JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
 SUPABASE_JWT_ALG = "HS256"
-
+# print(bool(SUPABASE_JWT_SECRET))
 def require_user(ctx: Context) -> str:
     auth = ctx.request.headers.get("authorization")
     if not auth or not auth.startswith("Bearer "):
