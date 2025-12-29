@@ -1,4 +1,4 @@
-from fastmcp import FastMCP, get_context
+from fastmcp import FastMCP, Context
 import asyncpg
 import os
 from typing import Optional
@@ -23,11 +23,11 @@ mcp = FastMCP("ExpenseTracker")
 # Auth helper
 # ------------------------------------------------------------------
 
-def require_user():
-    ctx = get_context()
+def require_user(ctx: Context):
     if not ctx.user:
         raise RuntimeError("Authentication required")
-    return ctx.user.id  # Supabase UUID
+    return ctx.user.id
+
 
 # ------------------------------------------------------------------
 # Database helpers
@@ -65,13 +65,14 @@ async def categories():
 
 @mcp.tool()
 async def add_expense(
+    ctx: Context,
     date: str,
     amount: float,
     category: str,
     subcategory: Optional[str] = None,
     note: str = ""
 ):
-    user_id = require_user()
+    user_id = require_user(ctx)
 
     conn = await get_conn()
     try:
@@ -132,8 +133,8 @@ async def add_expense(
 # ------------------------------------------------------------------
 
 @mcp.tool()
-async def list_expenses(start_date: str, end_date: str):
-    user_id = require_user()
+async def list_expenses(ctx: Context, start_date: str, end_date: str):
+    user_id = require_user(ctx)
 
     try:
         start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
@@ -179,12 +180,13 @@ async def list_expenses(start_date: str, end_date: str):
 
 @mcp.tool()
 async def summarize(
+    ctx: Context,
     start_date: str,
     end_date: str,
     category: Optional[str] = None,
     subcategory: Optional[str] = None
 ):
-    user_id = require_user()
+    user_id = require_user(ctx)
 
     try:
         start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
