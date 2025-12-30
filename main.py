@@ -8,19 +8,18 @@ from pathlib import Path
 from jose import jwt
 from fastmcp.server.dependencies import get_access_token
 from fastmcp import Context
+from fastmcp.server.auth.providers.supabase import SupabaseProvider
 
-def require_user(ctx: Context) -> str:
+
+from fastmcp.server.dependencies import get_access_token
+
+def require_user() -> str:
     token = get_access_token()
-
     if token is None:
         raise RuntimeError("Authentication required")
-
-    # Supabase user id is in standard JWT 'sub' claim
     user_id = token.claims.get("sub")
-
     if not user_id:
-        raise RuntimeError("Invalid access token (no user id)")
-
+        raise RuntimeError("Invalid access token: no user id")
     return user_id
 
 # ------------------------------------------------------------------
@@ -34,15 +33,23 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable not set")
 
-mcp = FastMCP("ExpenseTracker")
+
+auth = SupabaseProvider(
+    project_url="https://pswvisvskmhfczcvdplx.supabase.co",
+    base_url="https://expense-tracker-mcp-sever.fastmcp.app",
+)
+
+mcp = FastMCP(
+    "Expense Tracker",
+    auth=auth,
+)
+
+# mcp = FastMCP("ExpenseTracker")
 
 # ------------------------------------------------------------------
 # Auth helper
 # ------------------------------------------------------------------
 
-SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
-SUPABASE_JWT_ALG = "HS256"
-# print(bool(SUPABASE_JWT_SECRET))
 
 
 # ------------------------------------------------------------------
@@ -78,6 +85,17 @@ async def categories():
 # ------------------------------------------------------------------
 # MCP Tool: Add Expense (WRITE, AUTH REQUIRED)
 # ------------------------------------------------------------------
+@mcp.tool
+async def debug_token(ctx: Context) -> dict:
+    token = get_access_token()
+    if token is None:
+        return {"authenticated": False}
+    return {
+        "authenticated": True,
+        "claims": token.claims,
+    }
+
+
 
 @mcp.tool()
 async def add_expense(
@@ -88,7 +106,7 @@ async def add_expense(
     subcategory: Optional[str] = None,
     note: str = ""
 ):
-    user_id = require_user(ctx)
+    user_id = require_user()
 
     conn = await get_conn()
     try:
@@ -150,7 +168,7 @@ async def add_expense(
 
 @mcp.tool()
 async def list_expenses(ctx: Context, start_date: str, end_date: str):
-    user_id = require_user(ctx)
+    user_id = require_user()
 
     try:
         start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
@@ -202,7 +220,7 @@ async def summarize(
     category: Optional[str] = None,
     subcategory: Optional[str] = None
 ):
-    user_id = require_user(ctx)
+    user_id = require_user()
 
     try:
         start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
